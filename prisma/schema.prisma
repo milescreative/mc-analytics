@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator typescriptInterfaces {
+  provider = "prisma-generator-typescript-interfaces"
+  output   = "../src/server/db/gen/types.ts"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../src/server/db/analytics.db"
+}
+
+model Event {
+  id         Int      @id @default(autoincrement())
+  name       String
+  domain     String
+  url        String
+  timestamp  DateTime @default(now())
+  session_id String
+  referrer   String?
+  user_agent String?
+  meta       String?
+  props      String?
+  country    String?
+  region     String?
+  city       String?
+
+  @@index([domain, timestamp])
+  @@index([session_id])
+  @@index([country, region, city])
+  @@map("events")
+}

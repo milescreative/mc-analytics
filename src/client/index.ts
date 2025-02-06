@@ -53,6 +53,110 @@ class Analytics {
     this.lastPage = currentPath;
     this.trigger('pageview');
   };
+  private isInternalLink(href: string): boolean {
+    try {
+      const url = new URL(href, window.location.origin);
+      return url.origin === window.location.origin;
+    } catch {
+      // If href is relative path, it's internal
+      return true;
+    }
+  }
+  private handleClick = (event: MouseEvent): void => {
+    const target = event.target as HTMLElement;
+    const clickElement = this.findClickableElement(target);
+
+    if (!clickElement) return;
+    // Handle links specifically
+    if (clickElement.tagName === 'A') {
+      const link = clickElement as HTMLAnchorElement;
+      const href = link.href;
+
+      if (this.isInternalLink(href)) {
+        // Track internal navigation
+        this.trigger('click', {
+          meta: {
+            type: 'navigation',
+            from: window.location.pathname,
+            to: new URL(href, window.location.origin).pathname,
+            text: link.textContent?.trim() || undefined,
+          },
+        });
+      }
+      return;
+    }
+
+    // Check if element has analytics attribute
+    const analyticsAttr = clickElement.getAttribute('data-analytics');
+    if (!analyticsAttr) return;
+
+    // Gather metadata about the clicked element
+    const metadata = {
+      elementId: clickElement.id || undefined,
+      elementClass: clickElement.className || undefined,
+      text: clickElement.textContent?.trim() || undefined,
+      href: (clickElement as HTMLAnchorElement).href || undefined,
+      // Allow custom data attributes
+      ...this.getDataAttributes(clickElement),
+    };
+
+    this.trigger('click', {
+      meta: metadata,
+      props: { name: analyticsAttr },
+    });
+  };
+
+  private findClickableElement(
+    element: HTMLElement | null
+  ): HTMLElement | null {
+    while (element && element !== document.body) {
+      if (
+        element.tagName === 'A' ||
+        element.tagName === 'BUTTON' ||
+        element.hasAttribute('data-analytics')
+      ) {
+        return element;
+      }
+      element = element.parentElement;
+    }
+    return null;
+  }
+
+  private getDataAttributes(element: HTMLElement): Record<string, string> {
+    const dataset = element.dataset;
+    const attributes: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(dataset)) {
+      // Skip our main analytics attribute
+      if (key !== 'analytics' && value !== undefined) {
+        attributes[key] = value;
+      }
+    }
+
+    return attributes;
+  }
+
+  private handleError = (event: ErrorEvent | PromiseRejectionEvent): void => {
+    const isPromiseError = event instanceof PromiseRejectionEvent;
+    const error = isPromiseError ? event.reason : event.error;
+
+    const metadata = {
+      type: isPromiseError ? 'promise_rejection' : 'runtime_error',
+      message: error?.message || 'Unknown error',
+      stack: error?.stack,
+      source: (event as ErrorEvent).filename || undefined,
+      line: (event as ErrorEvent).lineno || undefined,
+      column: (event as ErrorEvent).colno || undefined,
+    };
+
+    this.trigger('error', {
+      meta: metadata,
+      props: {
+        url: window.location.href,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  };
 
   public start(): void {
     // Handle initial pageview
@@ -85,6 +189,9 @@ class Analytics {
       };
 
       window.addEventListener('popstate', () => this.handlePageview(true));
+      document.addEventListener('click', this.handleClick);
+      window.addEventListener('error', this.handleError);
+      window.addEventListener('unhandledrejection', this.handleError);
     }
   }
 }

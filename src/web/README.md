@@ -1,61 +1,50 @@
-# [TanStarter](https://github.com/dotnize/tanstarter)
+# React + TypeScript + Vite
 
-A minimal starter template for 🏝️ TanStack Start.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-- TanStack [Start](https://tanstack.com/start/latest) + [Router](https://tanstack.com/router/latest) + [Query](https://tanstack.com/query/latest)
-- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-- [Drizzle ORM](https://orm.drizzle.team/) + PostgreSQL
-- [Better Auth](https://www.better-auth.com/) with OAuth2 for GitHub, Google, and Discord.
+Currently, two official plugins are available:
 
-> If you're looking for an implementation based on the [Lucia Auth](https://lucia-auth.com) guide, check out the [`lucia-auth`](https://github.com/dotnize/tanstarter/tree/lucia-auth) branch.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Getting Started
+## Expanding the ESLint configuration
 
-1. [Use this template](https://github.com/new?template_name=tanstarter&template_owner=dotnize) or clone this repository.
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
-2. Install dependencies:
+- Configure the top-level `parserOptions` property like this:
 
-   ```bash
-   pnpm install # npm install
-   ```
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
 
-3. Create a `.env` file based on [`.env.example`](./.env.example).
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
 
-4. In your OAuth2 apps, set the callback/redirect URIs to `http://localhost:3000/api/auth/callback/<provider>` (e.g. http://localhost:3000/api/auth/callback/github).
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
 
-5. Push the schema to your database with drizzle-kit:
-
-   ```bash
-   pnpm db push # npm run db push
-   ```
-
-   https://orm.drizzle.team/docs/migrations
-
-6. Run the development server:
-
-   ```bash
-   pnpm dev # npm run dev
-   ```
-
-   The development server should be now running at [http://localhost:3000](http://localhost:3000).
-
-## Building for production
-
-1. Configure [`app.config.ts`](./app.config.ts#L15) for your preferred deployment target. Read the [hosting](https://tanstack.com/start/latest/docs/framework/react/hosting#deployment) docs for more information.
-
-2. Build the application:
-
-   ```bash
-   pnpm build # npm run build
-   ```
-
-3. If building for Node, you start the application via:
-
-   ```bash
-   pnpm start # npm start
-   ```
-
-## Acknowledgements
-
-- [nekochan0122/tanstack-boilerplate](https://github.com/nekochan0122/tanstack-boilerplate) - A batteries-included TanStack Start boilerplate that inspired some patterns in this template. If you're looking for a more feature-rich starter, check it out!
-- [AlexGaudon/tanstarter-better-auth](https://github.com/AlexGaudon/tanstarter-better-auth) for his own better-auth implementation.
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
+```

@@ -28,7 +28,7 @@ export class Config {
       ) ||
       location.protocol === 'file:'
     ) {
-      return true;
+      return false;
     }
     return false;
   }

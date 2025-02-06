@@ -2,8 +2,6 @@ import type { EventPayload } from './types';
 
 import type { EventOptions } from './types';
 
-import { appendFile } from 'node:fs/promises';
-
 // src/client/transport.ts
 export async function sendEvent(
   endpoint: string,
@@ -24,7 +22,7 @@ export async function sendEvent(
   });
 
   try {
-    await appendFile('analytics.log', logEntry);
+    console.log('analytics.log', logEntry);
 
     options?.callback?.({ status: 200 });
   } catch (error) {
